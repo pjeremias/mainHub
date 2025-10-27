@@ -101,17 +101,83 @@ void WiFiManager::startAPMode() {
 void WiFiManager::handleRoot() {
   String html = R"(
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>ESP32 WiFi Configuration</title>
       <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        h1 { text-align: center; }
-        form { display: flex; flex-direction: column; gap: 10px; }
-        label { font-weight: bold; }
-        select, input { padding: 8px; font-size: 16px; }
-        button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          background-color: #121212;
+          color: #e0e0e0;
+          max-width: 400px;
+          margin: 0 auto;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-height: 100vh;
+        }
+        h1 {
+          color: #ffffff;
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        p {
+          text-align: center;
+          margin-bottom: 30px;
+          color: #b0b0b0;
+        }
+        form {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+        label {
+          font-weight: 600;
+          color: #d0d0d0;
+        }
+        select, input[type="password"] {
+          background-color: #1e1e1e;
+          color: #e0e0e0;
+          border: 1px solid #333333;
+          border-radius: 6px;
+          padding: 12px;
+          font-size: 16px;
+          appearance: none;
+          transition: border-color 0.3s ease;
+        }
+        select:focus, input[type="password"]:focus {
+          border-color: #4CAF50;
+          outline: none;
+        }
+        button {
+          background-color: #4CAF50;
+          color: #ffffff;
+          border: none;
+          border-radius: 6px;
+          padding: 12px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        button:hover {
+          background-color: #45a049;
+        }
+        button:active {
+          transform: scale(0.98);
+        }
+        @media (prefers-color-scheme: light) {
+          body { background-color: #f5f5f5; color: #333333; }
+          h1 { color: #222222; }
+          p { color: #555555; }
+          label { color: #444444; }
+          select, input[type="password"] { background-color: #ffffff; color: #333333; border: 1px solid #dddddd; }
+          select:focus, input[type="password"]:focus { border-color: #4CAF50; }
+        }
       </style>
     </head>
     <body>
@@ -119,7 +185,7 @@ void WiFiManager::handleRoot() {
       <p>Select a network and enter the password if required.</p>
       <form action="/save" method="post">
         <label for="ssid">Available Networks:</label>
-        <select id="ssid" name="ssid">
+        <select id="ssid" name="ssid" required>
           )" + generateNetworkList() + R"(
         </select>
         <label for="password">Password:</label>
