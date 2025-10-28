@@ -15,6 +15,7 @@ void SystemController::addSensor(const String& id, Sensor* sensor) {
         Serial.printf("Sensor ID '%s' already exists. Overwriting...\n", id.c_str());
     }
     _sensorById[id] = sensor;
+    sensor->begin();
 }
 
 void SystemController::addOutput(const String& id, Output* output) {
@@ -26,6 +27,7 @@ void SystemController::addOutput(const String& id, Output* output) {
         Serial.printf("Output ID '%s' already exists. Overwriting...\n", id.c_str());
     }
     _outputById[id] = output;
+    output->begin();
 }
 
 void SystemController::attachOutputToSensor(const String& outputId, const String& sensorId) {
@@ -42,16 +44,6 @@ void SystemController::attachOutputToSensor(const String& outputId, const String
 
     _linkages[sensorId].push_back(outputIt->second);
     Serial.printf("Attached output '%s' to sensor '%s'.\n", outputId.c_str(), sensorId.c_str());
-}
-
-void SystemController::begin() {
-    for (const auto& pair : _sensorById) {
-        pair.second->begin();
-    }
-    for (const auto& pair : _outputById) {
-        pair.second->begin();
-    }
-    Serial.println("SystemController initialized all components.");
 }
 
 void SystemController::loop() {

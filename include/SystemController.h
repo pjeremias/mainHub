@@ -1,3 +1,4 @@
+// src/SystemController.h
 #ifndef SYSTEM_CONTROLLER_H
 #define SYSTEM_CONTROLLER_H
 
@@ -17,7 +18,6 @@ public:
     void addOutput(const String& id, Output* output);
     void attachOutputToSensor(const String& outputId, const String& sensorId);
 
-    void begin();
     void loop();
 
 private:
