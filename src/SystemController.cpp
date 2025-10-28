@@ -6,16 +6,22 @@ SystemController::~SystemController() {
     // No deletes: Pointers are not owned (instantiated externally)
 }
 
-void SystemController::addSensor(Sensor* sensor) {
-    String id = sensor->getId();
+void SystemController::addSensor(const String& id, Sensor* sensor) {
+    if (id.isEmpty()) {
+        Serial.println("Cannot add sensor with empty ID. Skipping.");
+        return;
+    }
     if (_sensorById.find(id) != _sensorById.end()) {
         Serial.printf("Sensor ID '%s' already exists. Overwriting...\n", id.c_str());
     }
     _sensorById[id] = sensor;
 }
 
-void SystemController::addOutput(Output* output) {
-    String id = output->getId();
+void SystemController::addOutput(const String& id, Output* output) {
+    if (id.isEmpty()) {
+        Serial.println("Cannot add output with empty ID. Skipping.");
+        return;
+    }
     if (_outputById.find(id) != _outputById.end()) {
         Serial.printf("Output ID '%s' already exists. Overwriting...\n", id.c_str());
     }

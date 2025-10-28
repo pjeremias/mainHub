@@ -13,8 +13,8 @@ public:
     SystemController(MQTTManager& mqttManager);
     ~SystemController();  // Destructor for potential cleanup (no deletes since not owning)
 
-    void addSensor(Sensor* sensor);
-    void addOutput(Output* output);
+    void addSensor(const String& id, Sensor* sensor);
+    void addOutput(const String& id, Output* output);
     void attachOutputToSensor(const String& outputId, const String& sensorId);
 
     void begin();
