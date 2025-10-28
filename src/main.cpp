@@ -1,13 +1,16 @@
 #include <Arduino.h>
 #include "WiFiManager.h"
 #include "MQTTManager.h"
+#include "SystemController.h"
 #include "DHTSensor.h"
 #include "CoolingOutput.h"
 
 WiFiManager wifiManager;
 MQTTManager mqttManager;
-DHTSensor dhtSensor(27);
-CoolingOutput coolingOutput(14);
+SystemController systemController(mqttManager);
+
+DHTSensor dhtSensor(27);  // Pin 27 for DHT22
+CoolingOutput coolingOutput(14);  // Example pin 14 for relay/output (change as needed)
 
 void setup() {
   Serial.begin(115200);
@@ -15,32 +18,22 @@ void setup() {
 
   wifiManager.begin();
   mqttManager.begin();
-  dhtSensor.begin();
-  coolingOutput.begin();
-  coolingOutput.setSetPoint(25.0);  // Example set point: 25°C
-  coolingOutput.setHysteresis(2.0);  // Example hysteresis: ±2°C
-
+  
+  // This functions should begin the sensors! If not, when adding after init of the controller
+  // the sensors won't be initialized.
+  systemController.addSensor("dht22", &dhtSensor);
+  systemController.addOutput("fridge", &coolingOutput);
+  systemController.attachOutputToSensor("fridge", "dht22");
+  
+  coolingOutput.setSetPoint(25.0);
+  coolingOutput.setHysteresis(2.0);
+  
+  systemController.begin();
+  
   Serial.println("Setup complete. Proceeding to main loop.");
 }
 
 void loop() {
-  mqttManager.loop();
-  
-  // Temporary: Read and publish DHT data every 5 seconds (will move to SystemController)
-  static unsigned long lastReadTime = 0;
-  if (millis() - lastReadTime > 5000) {
-    lastReadTime = millis();
-    SensorData data = dhtSensor.readData();
-    if (!data.empty()) {
-      for (const auto& pair : data) {
-        char dataStr[8];
-        dtostrf(pair.second, 6, 2, dataStr);
-        String topic = "esp32/hub/" + pair.first;
-        mqttManager.publish(topic.c_str(), dataStr);
-      }
-
-      // Actuate the output based on sensor data
-      coolingOutput.actuate(data);
-    }
-  }
+  mqttManager.loop();  // Handle MQTT connection
+  systemController.loop();  // Handle reading, publishing, and actuation
 }
