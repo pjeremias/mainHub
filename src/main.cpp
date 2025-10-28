@@ -27,9 +27,7 @@ void setup() {
   
   coolingOutput.setSetPoint(25.0);
   coolingOutput.setHysteresis(2.0);
-  
-  systemController.begin();
-  
+    
   Serial.println("Setup complete. Proceeding to main loop.");
 }
 
