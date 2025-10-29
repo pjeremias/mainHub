@@ -30,5 +30,9 @@ void CoolingOutput::actuate(const SensorData& data) {
         _isActive = shouldActivate;
         digitalWrite(_pin, _isActive ? HIGH : LOW);  // Assume HIGH activates relay/cooling
         Serial.printf("Cooling output %s.\n", _isActive ? "activated" : "deactivated");
+
+        if (_onStateChange) {
+            _onStateChange(this, _isActive);
+        }
     }
 }
