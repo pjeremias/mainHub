@@ -27,6 +27,23 @@ void SystemController::addOutput(const String& id, Output* output) {
         Serial.printf("Output ID '%s' already exists. Overwriting...\n", id.c_str());
     }
     _outputById[id] = output;
+
+    output->setOnStateChange([this](Output* out, bool newState) {
+        // Reverse lookup ID from pointer
+        String outputId;
+        for (const auto& pair : _outputById) {
+            if (pair.second == out) {
+                outputId = pair.first;
+                break;
+            }
+        }
+        if (!outputId.isEmpty()) {
+            String topic = "esp32/hub/" + outputId + "/state";
+            _mqttManager.publish(topic.c_str(), newState ? "on" : "off");
+            Serial.printf("Published state change for output '%s': %s\n", outputId.c_str(), newState ? "on" : "off");
+        }
+    });
+
     output->begin();
 }
 
