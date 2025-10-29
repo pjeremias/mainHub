@@ -15,9 +15,12 @@ public:
     void setSetPoint(double value) {_setPoint = value;}
     void setHysteresis(double value) {_hysteresis = value;}
 
+    void setOnStateChange(std::function<void(Output*, bool newState)> callback) {_onStateChange = callback;}
+
 protected:
     double _setPoint = 25.0;    // Default set point (e.g., Celsius)
     double _hysteresis = 1.0;   // Default hysteresis (e.g., degrees)
+    std::function<void(Output*, bool newState)> _onStateChange = nullptr;
 };
 
 #endif  // OUTPUT_H
