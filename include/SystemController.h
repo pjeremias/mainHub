@@ -14,6 +14,8 @@ public:
     SystemController(MQTTManager& mqttManager);
     ~SystemController();  // Destructor for potential cleanup (no deletes since not owning)
 
+    void begin();
+    
     void addSensor(const String& id, Sensor* sensor);
     void addOutput(const String& id, Output* output);
     void attachOutputToSensor(const String& outputId, const String& sensorId);
@@ -28,6 +30,8 @@ private:
 
     unsigned long _lastReadTime = 0;
     const unsigned long _readInterval = 5000;  // 5 seconds
+
+    void handleCommand(const char* payload);
 };
 
 #endif  // SYSTEM_CONTROLLER_H

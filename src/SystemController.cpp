@@ -1,9 +1,16 @@
 #include "SystemController.h"
+#include <ArduinoJson.h>
 
 SystemController::SystemController(MQTTManager& mqttManager) : _mqttManager(mqttManager) {}
 
 SystemController::~SystemController() {
     // No deletes: Pointers are not owned (instantiated externally)
+}
+
+void SystemController::begin() {
+    _mqttManager.subscribe("esp32/hub/commands", [this](const char* payload) {
+        this->handleCommand(payload);
+    });
 }
 
 void SystemController::addSensor(const String& id, Sensor* sensor) {
@@ -91,5 +98,37 @@ void SystemController::loop() {
                 }
             }
         }
+    }
+}
+
+void SystemController::handleCommand(const char* payload) {
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, payload);
+    if (error) {
+        Serial.printf("JSON parse error: %s\n", error.c_str());
+        return;
+    }
+
+    String command = doc["command"];
+    if (command == "set_output_param") {
+        String outputId = doc["output_id"];
+        auto it = _outputById.find(outputId);
+        if (it == _outputById.end()) {
+            Serial.printf("Output ID '%s' not found.\n", outputId.c_str());
+            return;
+        }
+        Output* output = it->second;
+
+        if (doc["set_setpoint"].is<double>()) {
+            double value = doc["set_setpoint"];
+            output->setSetPoint(value);
+        }
+        if (doc["set_hysteresis"].is<double>()) {
+            double value = doc["set_hysteresis"];
+            output->setHysteresis(value);
+        }
+        Serial.printf("Applied config to output '%s'.\n", outputId.c_str());
+    } else {
+        Serial.printf("Unknown command: %s\n", command.c_str());
     }
 }
