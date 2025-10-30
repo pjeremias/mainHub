@@ -39,7 +39,7 @@ void SystemController::addOutput(const String& id, Output* output) {
         }
         if (!outputId.isEmpty()) {
             String topic = "esp32/hub/" + outputId + "/state";
-            _mqttManager.publish(topic.c_str(), newState ? "on" : "off");
+            _mqttManager.publish(topic.c_str(), newState ? "on" : "off", true);
             Serial.printf("Published state change for output '%s': %s\n", outputId.c_str(), newState ? "on" : "off");
         }
     });
