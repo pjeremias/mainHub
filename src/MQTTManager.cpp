@@ -49,13 +49,13 @@ void MQTTManager::loop() {
   }
 }
 
-bool MQTTManager::publish(const char* topic, const char* payload) {
+bool MQTTManager::publish(const char* topic, const char* payload, bool retained) {
   if (!mqttClient.connected()) {
     reconnect();
   }
-  bool success = mqttClient.publish(topic, payload);
+  bool success = mqttClient.publish(topic, (const uint8_t*)payload, strlen(payload), retained);  // Pass retained flag
   if (success) {
-    Serial.printf("Published to %s: %s\n", topic, payload);
+    Serial.printf("Published to %s: %s (retained: %s)\n", topic, payload, retained ? "true" : "false");
   } else {
     Serial.printf("Failed to publish to %s\n", topic);
   }
