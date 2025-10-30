@@ -19,13 +19,10 @@ void setup() {
   wifiManager.begin();
   mqttManager.begin();
   
-  // This functions should begin the sensors! If not, when adding after init of the controller
-  // the sensors won't be initialized.
   systemController.addSensor("dht22", &dhtSensor);
   systemController.addOutput("fridge", &coolingOutput);
   systemController.attachOutputToSensor("fridge", "dht22");
-  
-  coolingOutput.setSetPoint(25.0);
+  coolingOutput.setSetPoint(20.0);
   coolingOutput.setHysteresis(2.0);
     
   Serial.println("Setup complete. Proceeding to main loop.");
