@@ -18,6 +18,7 @@ void setup() {
 
   wifiManager.begin();
   mqttManager.begin();
+  systemController.begin();
   
   systemController.addSensor("dht22", &dhtSensor);
   systemController.addOutput("fridge", &coolingOutput);
