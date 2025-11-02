@@ -4,12 +4,12 @@
 #include "SystemController.h"
 #include "DHTSensor.h"
 #include "CoolingOutput.h"
+#include <ArduinoJson.h> // delete
 
 WiFiManager wifiManager;
 MQTTManager mqttManager;
 SystemController systemController(mqttManager);
 
-DHTSensor dhtSensor(27);  // Pin 27 for DHT22
 CoolingOutput coolingOutput(14);  // Example pin 14 for relay/output (change as needed)
 
 void setup() {
@@ -20,7 +20,9 @@ void setup() {
   mqttManager.begin();
   systemController.begin();
   
-  systemController.addSensor("dht22", &dhtSensor);
+  JsonDocument doc;
+  doc["pin"] = 27;
+  systemController.addSensor("tempSensor", "dht22", doc.as<JsonObjectConst>());
   systemController.addOutput("fridge", &coolingOutput);
   systemController.attachOutputToSensor("fridge", "dht22");
   coolingOutput.setSetPoint(20.0);
