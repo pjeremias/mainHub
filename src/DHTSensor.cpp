@@ -1,4 +1,5 @@
 #include "DHTSensor.h"
+#include "SensorFactory.h"
 
 DHTSensor::DHTSensor(uint8_t pin, uint8_t type) : _dht(_pin, _type), _pin(pin), _type(type){}
 
@@ -23,3 +24,11 @@ SensorData DHTSensor::readData() {
   data["hum"] = 80;
   return data;
 }
+static SensorRegistrar _dhtRegistrar("dht22", [](const JsonObjectConst& params) -> Sensor* {
+  uint8_t pin = params["pin"] | -1;  // Default -1 if missing
+  if (pin == -1) {  // Basic validation
+    Serial.println("Missing 'pin' for dht22");
+    return nullptr;
+  }
+  return new DHTSensor(pin, DHT22);
+});
