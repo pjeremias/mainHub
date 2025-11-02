@@ -1,10 +1,13 @@
 #include "SystemController.h"
-#include <ArduinoJson.h>
+#include "SensorFactory.h"
 
 SystemController::SystemController(MQTTManager& mqttManager) : _mqttManager(mqttManager) {}
 
 SystemController::~SystemController() {
-    // No deletes: Pointers are not owned (instantiated externally)
+    // Delete owned sensors
+    for (auto& pair : _sensorById) {
+        delete pair.second;
+    }
 }
 
 void SystemController::begin() {
@@ -13,16 +16,24 @@ void SystemController::begin() {
     });
 }
 
-void SystemController::addSensor(const String& id, Sensor* sensor) {
+void SystemController::addSensor(const String& id, const String& type, const JsonObjectConst& params) {
     if (id.isEmpty()) {
         Serial.println("Cannot add sensor with empty ID. Skipping.");
         return;
     }
     if (_sensorById.find(id) != _sensorById.end()) {
         Serial.printf("Sensor ID '%s' already exists. Overwriting...\n", id.c_str());
+        delete _sensorById[id];  // Clean old owned sensor
+    }
+
+    Sensor* sensor = SensorFactory::instance().create(type, params);
+    if (sensor == nullptr) {
+        Serial.printf("Failed to create sensor of type '%s' for ID '%s'.\n", type.c_str(), id.c_str());
+        return;
     }
     _sensorById[id] = sensor;
-    sensor->begin();
+    sensor->begin();  // Initialize immediately
+    Serial.printf("Added and initialized sensor '%s' of type '%s'.\n", id.c_str(), type.c_str());
 }
 
 void SystemController::addOutput(const String& id, Output* output) {

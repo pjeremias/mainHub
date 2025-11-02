@@ -8,6 +8,7 @@
 #include "Sensor.h"
 #include "Output.h"
 #include "MQTTManager.h"
+#include "ArduinoJson.h"
 
 class SystemController {
 public:
@@ -15,8 +16,8 @@ public:
     ~SystemController();  // Destructor for potential cleanup (no deletes since not owning)
 
     void begin();
-    
-    void addSensor(const String& id, Sensor* sensor);
+
+    void addSensor(const String& id, const String& type, const JsonObjectConst& params);    
     void addOutput(const String& id, Output* output);
     void attachOutputToSensor(const String& outputId, const String& sensorId);
 
