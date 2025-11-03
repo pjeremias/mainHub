@@ -132,7 +132,34 @@ void SystemController::handleCommand(const char* payload) {
     }
 
     String command = doc["command"];
-    if (command == "set_output_param") {
+    
+    if (command == "add_sensor") {
+        String id = doc["id"];
+        String type = doc["type"];
+        JsonObjectConst params = doc["params"];
+        
+        if (id.isEmpty() || type.isEmpty()) {
+            Serial.println("Missing 'id' or 'type' for add_sensor command");
+            return;
+        }
+        
+        addSensor(id, type, params);
+        Serial.printf("Added sensor '%s' of type '%s' via command.\n", id.c_str(), type.c_str());
+        
+    } else if (command == "add_output") {
+        String id = doc["id"];
+        String type = doc["type"];
+        JsonObjectConst params = doc["params"];
+        
+        if (id.isEmpty() || type.isEmpty()) {
+            Serial.println("Missing 'id' or 'type' for add_output command");
+            return;
+        }
+        
+        addOutput(id, type, params);
+        Serial.printf("Added output '%s' of type '%s' via command.\n", id.c_str(), type.c_str());
+        
+    } else if (command == "set_output_param") {
         String outputId = doc["output_id"];
         auto it = _outputById.find(outputId);
         if (it == _outputById.end()) {
