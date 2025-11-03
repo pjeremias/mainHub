@@ -1,11 +1,16 @@
 #include "SystemController.h"
 #include "SensorFactory.h"
+#include "OutputFactory.h"
 
 SystemController::SystemController(MQTTManager& mqttManager) : _mqttManager(mqttManager) {}
 
 SystemController::~SystemController() {
     // Delete owned sensors
     for (auto& pair : _sensorById) {
+        delete pair.second;
+    }
+    // Delete owned outputs
+    for (auto& pair : _outputById) {
         delete pair.second;
     }
 }
@@ -33,16 +38,22 @@ void SystemController::addSensor(const String& id, const String& type, const Jso
     }
     _sensorById[id] = sensor;
     sensor->begin();  // Initialize immediately
-    Serial.printf("Added and initialized sensor '%s' of type '%s'.\n", id.c_str(), type.c_str());
 }
 
-void SystemController::addOutput(const String& id, Output* output) {
+void SystemController::addOutput(const String& id, const String& type, const JsonObjectConst& params) {
     if (id.isEmpty()) {
         Serial.println("Cannot add output with empty ID. Skipping.");
         return;
     }
     if (_outputById.find(id) != _outputById.end()) {
         Serial.printf("Output ID '%s' already exists. Overwriting...\n", id.c_str());
+        delete _outputById[id];  // Clean old owned output
+    }
+
+    Output* output = OutputFactory::instance().create(type, params);
+    if (output == nullptr) {
+        Serial.printf("Failed to create output of type '%s' for ID '%s'.\n", type.c_str(), id.c_str());
+        return;
     }
     _outputById[id] = output;
 

@@ -18,7 +18,7 @@ public:
     void begin();
 
     void addSensor(const String& id, const String& type, const JsonObjectConst& params);    
-    void addOutput(const String& id, Output* output);
+    void addOutput(const String& id, const String& type, const JsonObjectConst& params);
     void attachOutputToSensor(const String& outputId, const String& sensorId);
 
     void loop();
