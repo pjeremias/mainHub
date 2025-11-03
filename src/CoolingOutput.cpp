@@ -1,4 +1,5 @@
 #include "CoolingOutput.h"
+#include "OutputFactory.h"
 
 CoolingOutput::CoolingOutput(uint8_t pin) : _pin(pin) {}
 
@@ -36,3 +37,12 @@ void CoolingOutput::actuate(const SensorData& data) {
         }
     }
 }
+
+static OutputRegistrar _coolingRegistrar("cooling", [](const JsonObjectConst& params) -> Output* {
+    uint8_t pin = params["pin"] | -1;  // Default -1 if missing
+    if (pin == -1) {  // Basic validation
+        Serial.println("Missing 'pin' for cooling output");
+        return nullptr;
+    }
+    return new CoolingOutput(pin);
+});
