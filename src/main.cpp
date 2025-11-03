@@ -10,8 +10,6 @@ WiFiManager wifiManager;
 MQTTManager mqttManager;
 SystemController systemController(mqttManager);
 
-CoolingOutput coolingOutput(14);  // Example pin 14 for relay/output (change as needed)
-
 void setup() {
   Serial.begin(115200);
   Serial.println("Starting ESP32 Hub Firmware");
@@ -23,10 +21,12 @@ void setup() {
   JsonDocument doc;
   doc["pin"] = 27;
   systemController.addSensor("tempSensor", "dht22", doc.as<JsonObjectConst>());
-  systemController.addOutput("fridge", &coolingOutput);
-  systemController.attachOutputToSensor("fridge", "dht22");
-  coolingOutput.setSetPoint(20.0);
-  coolingOutput.setHysteresis(2.0);
+  
+  JsonDocument outputDoc;
+  outputDoc["pin"] = 14;
+  systemController.addOutput("fridge", "cooling", outputDoc.as<JsonObjectConst>());
+  
+  systemController.attachOutputToSensor("fridge", "tempSensor");
     
   Serial.println("Setup complete. Proceeding to main loop.");
 }
