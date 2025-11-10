@@ -1,10 +1,10 @@
 #include "OutputFactory.h"
 
-void OutputFactory::registerType(const String& type, CreateFunc creator) {
+void OutputFactory::registerType(const std::string& type, CreateFunc creator) {
     _registry[type] = creator;
 }
 
-Output* OutputFactory::create(const String& type, const JsonObjectConst& params) {
+Output* OutputFactory::create(const std::string&type, const JsonObjectConst& params) {
     auto it = _registry.find(type);
     if (it != _registry.end()) {
         return it->second(params);

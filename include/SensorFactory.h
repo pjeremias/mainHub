@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 #include <functional>
-#include <map>
+#include <unordered_map>
+#include <string>
 #include "ArduinoJson.h"
 #include "Sensor.h"
 
@@ -11,8 +12,8 @@ class SensorFactory {
 public:
     using CreateFunc = std::function<Sensor*(const JsonObjectConst& params)>;
 
-    void registerType(const String& type, CreateFunc creator);
-    Sensor* create(const String& type, const JsonObjectConst& params);
+    void registerType(const std::string& type, CreateFunc creator);
+    Sensor* create(const std::string& type, const JsonObjectConst& params);
 
     static SensorFactory& instance() {
         static SensorFactory factory;
@@ -20,13 +21,13 @@ public:
     }
 
 private:
-    std::map<String, CreateFunc> _registry;
+    std::unordered_map<std::string, CreateFunc> _registry;
     SensorFactory() = default;
 };
 
 class SensorRegistrar {
 public:
-    SensorRegistrar(const String& type, SensorFactory::CreateFunc creator) {
+    SensorRegistrar(const std::string& type, SensorFactory::CreateFunc creator) {
         SensorFactory::instance().registerType(type, creator);
     }
 };

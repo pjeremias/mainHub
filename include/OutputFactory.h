@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 #include <functional>
-#include <map>
+#include <unordered_map>
+#include <string>
 #include "ArduinoJson.h"
 #include "Output.h"
 
@@ -11,8 +12,8 @@ class OutputFactory {
 public:
     using CreateFunc = std::function<Output*(const JsonObjectConst& params)>;
 
-    void registerType(const String& type, CreateFunc creator);
-    Output* create(const String& type, const JsonObjectConst& params);
+    void registerType(const std::string& type, CreateFunc creator);
+    Output* create(const std::string& type, const JsonObjectConst& params);
 
     static OutputFactory& instance() {
         static OutputFactory factory;
@@ -20,13 +21,13 @@ public:
     }
 
 private:
-    std::map<String, CreateFunc> _registry;
+    std::unordered_map<std::string, CreateFunc> _registry;
     OutputFactory() = default;
 };
 
 class OutputRegistrar {
 public:
-    OutputRegistrar(const String& type, OutputFactory::CreateFunc creator) {
+    OutputRegistrar(const std::string& type, OutputFactory::CreateFunc creator) {
         OutputFactory::instance().registerType(type, creator);
     }
 };
