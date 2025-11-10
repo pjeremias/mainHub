@@ -11,7 +11,15 @@ class Sensor {
 public:
     virtual ~Sensor() {}  // Virtual destructor for proper cleanup in polymorphism
     virtual void begin() = 0;  // Initialize the sensor hardware
-    virtual SensorData readData() = 0;  // Read and return data; return empty map on error
+    virtual bool updateData() = 0;  // Update the internal data cache and return success
+    SensorData getData() { return _data; }  // Return the cached data
+
+    // Unified data key constants
+    inline static const std::string TEMP_KEY = "temp";
+    inline static const std::string HUM_KEY = "hum";
+
+protected:
+    SensorData _data;  // Cached sensor data
 };
 
 #endif  // SENSOR_H
