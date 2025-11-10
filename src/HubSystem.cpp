@@ -5,10 +5,10 @@ HubSystem::HubSystem() {}
 HubSystem::~HubSystem() {
     // Clean up owned devices
     for (size_t i = 0; i < _sensorCount; ++i) {
-        delete _sensors[i].second;
+        delete _sensors[i].sensor;
     }
     for (size_t i = 0; i < _outputCount; ++i) {
-        delete _outputs[i].second;
+        delete _outputs[i].output;
     }
 }
 
@@ -45,16 +45,16 @@ bool HubSystem::removeSensor(const std::string& id) {
         return false;
     }
 
-    // Unlink any outputs linked to this sensor
-    for (size_t i = 0; i < _linkCount; ++i) {
-        if (_outputToSensorLinks[i].second == id) {
-            _outputToSensorLinks[i].second = "";  // Unlink
-            Serial.printf("Unlinked output '%s' from removed sensor '%s'\n", _outputToSensorLinks[i].first.c_str(), id.c_str());
+    // Clear attachedSensor in outputs if they were attached to this sensor
+    for (size_t i = 0; i < _outputCount; ++i) {
+        if (_outputs[i].attachedSensor == id) {
+            _outputs[i].attachedSensor = "";
+            Serial.printf("Cleared attachment for output '%s'\n", _outputs[i].id.c_str());
         }
     }
 
     // Delete the sensor
-    delete _sensors[index].second;
+    delete _sensors[index].sensor;
 
     // Shift elements to keep array contiguous
     for (size_t i = index; i < _sensorCount - 1; ++i) {
@@ -83,8 +83,8 @@ bool HubSystem::addOutput(const std::string& id, Output* output) {
         return false;
     }
 
-    // Add to end
-    _outputs[_outputCount] = {id, output};
+    // Add to end (keeps array contiguous)
+    _outputs[_outputCount] = {id, output, ""};  // attachedSensor starts empty
     _outputCount++;
     output->begin();  // Initialize immediately
     Serial.printf("Added output '%s'\n", id.c_str());
@@ -98,11 +98,8 @@ bool HubSystem::removeOutput(const std::string& id) {
         return false;
     }
 
-    // Unlink the output
-    unlinkOutput(id);
-
     // Delete the output
-    delete _outputs[index].second;
+    delete _outputs[index].output;
 
     // Shift elements to keep array contiguous
     for (size_t i = index; i < _outputCount - 1; ++i) {
@@ -114,60 +111,37 @@ bool HubSystem::removeOutput(const std::string& id) {
 }
 
 bool HubSystem::linkOutputToSensor(const std::string& outputId, const std::string& sensorId) {
-    if (outputId.empty() || sensorId.empty()) {  // Allow empty sensorId for unlinking
+    if (outputId.empty() || sensorId.empty()) {
         Serial.println("Invalid outputId or sensorId");
         return false;
     }
 
-    // Check if output exists
-    if (getOutput(outputId) == nullptr) {
+    size_t outputIndex = findOutputIndex(outputId);
+    if (outputIndex >= MAX_OUTPUTS) {
         Serial.printf("Output ID '%s' not found\n", outputId.c_str());
         return false;
     }
 
-    // Check if sensor exists (unless unlinking)
     if (getSensor(sensorId) == nullptr) {
         Serial.printf("Sensor ID '%s' not found\n", sensorId.c_str());
         return false;
     }
 
-    // Find existing link or add new
-    size_t linkIndex = findLinkIndex(outputId);
-    if (linkIndex < MAX_OUTPUTS) {
-        // Update existing
-        _outputToSensorLinks[linkIndex].second = sensorId;
-    } else {
-        // Add new link
-        if (_linkCount >= MAX_OUTPUTS) {
-            Serial.println("Maximum links reached");
-            return false;
-        }
-        _outputToSensorLinks[_linkCount] = {outputId, sensorId};
-        _linkCount++;
-    }
-    Serial.printf("Linked output '%s' to sensor '%s'\n", outputId.c_str(), sensorId.empty() ? "none" : sensorId.c_str());
+    _outputs[outputIndex].attachedSensor = sensorId;
+    Serial.printf("Linked output '%s' to sensor '%s'\n", outputId.c_str(), sensorId.c_str());
     return true;
 }
 
 bool HubSystem::unlinkOutput(const std::string& outputId) {
-    size_t linkIndex = findLinkIndex(outputId);
-    if (linkIndex >= MAX_OUTPUTS) {
-        Serial.printf("No link found for output '%s'\n", outputId.c_str());
+    size_t outputIndex = findOutputIndex(outputId);
+    if (outputIndex >= MAX_OUTPUTS) {
+        Serial.printf("Output ID '%s' not found\n", outputId.c_str());
         return false;
     }
 
-    // Shift elements to keep array contiguous
-    for (size_t i = linkIndex; i < _linkCount - 1; ++i) {
-        _outputToSensorLinks[i] = _outputToSensorLinks[i + 1];
-    }
-    _linkCount--;
+    _outputs[outputIndex].attachedSensor = "";
     Serial.printf("Unlinked output '%s'\n", outputId.c_str());
     return true;
-}
-
-std::string HubSystem::getLinkedSensorId(const std::string& outputId) {
-    size_t linkIndex = findLinkIndex(outputId);
-    return (linkIndex < _linkCount) ? _outputToSensorLinks[linkIndex].second : "";
 }
 
 void HubSystem::loop() {
@@ -175,41 +149,43 @@ void HubSystem::loop() {
 
     _lastUpdate = millis();
 
-    // Update all sensors unconditionally
+    // Update all sensors unconditionally and log data
     for (size_t i = 0; i < _sensorCount; ++i) {
-        _sensors[i].second->updateData();
+        _sensors[i].sensor->updateData();
+        SensorData data = _sensors[i].sensor->getData();
+        Serial.printf("Sensor '%s' updated: ", _sensors[i].id.c_str());
+        for (const auto& pair : data) {
+            Serial.printf("%s=%.2f ", pair.first.c_str(), pair.second);
+        }
+        Serial.println();
     }
 
-    // Actuate linked outputs
-    for (size_t i = 0; i < _linkCount; ++i) {
-        const std::string& outputId = _outputToSensorLinks[i].first;
-        const std::string& sensorId = _outputToSensorLinks[i].second;
-
-        if (sensorId.empty()) continue;  // Skip unlinked outputs
-
-        Sensor* sensor = getSensor(sensorId);
-        Output* output = getOutput(outputId);
-
-        if (sensor && output) {
-            SensorData data = sensor->getData();
-            output->actuate(data);
+    // Iterate through outputs and actuate if attached to a sensor
+    for (size_t i = 0; i < _outputCount; ++i) {
+        if (!_outputs[i].attachedSensor.empty()) {
+            Sensor* sensor = getSensor(_outputs[i].attachedSensor);
+            if (sensor) {
+                SensorData data = sensor->getData();
+                Serial.printf("Actuating output '%s' based on sensor '%s'\n", _outputs[i].id.c_str(), _outputs[i].attachedSensor.c_str());
+                _outputs[i].output->actuate(data);
+            }
         }
     }
 }
 
 Sensor* HubSystem::getSensor(const std::string& id) {
     size_t index = findSensorIndex(id);
-    return (index < _sensorCount) ? _sensors[index].second : nullptr;
+    return (index < _sensorCount) ? _sensors[index].sensor : nullptr;
 }
 
 Output* HubSystem::getOutput(const std::string& id) {
     size_t index = findOutputIndex(id);
-    return (index < _outputCount) ? _outputs[index].second : nullptr;
+    return (index < _outputCount) ? _outputs[index].output : nullptr;
 }
 
 size_t HubSystem::findSensorIndex(const std::string& id) const {
     for (size_t i = 0; i < _sensorCount; ++i) {
-        if (_sensors[i].first == id) {
+        if (_sensors[i].id == id) {
             return i;
         }
     }
@@ -218,16 +194,7 @@ size_t HubSystem::findSensorIndex(const std::string& id) const {
 
 size_t HubSystem::findOutputIndex(const std::string& id) const {
     for (size_t i = 0; i < _outputCount; ++i) {
-        if (_outputs[i].first == id) {
-            return i;
-        }
-    }
-    return MAX_OUTPUTS;  // Not found
-}
-
-size_t HubSystem::findLinkIndex(const std::string& outputId) const {
-    for (size_t i = 0; i < _linkCount; ++i) {
-        if (_outputToSensorLinks[i].first == outputId) {
+        if (_outputs[i].id == id) {
             return i;
         }
     }
