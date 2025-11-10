@@ -38,6 +38,18 @@ void CoolingOutput::actuate(const SensorData& data) {
     }
 }
 
+void CoolingOutput::setConfig(const ConfigMap& config) {
+    auto it = config.find(CONFIG_SET_POINT);
+    if (it != config.end() && std::holds_alternative<double>(it->second)) {
+        setSetPoint(std::get<double>(it->second));
+    }
+
+    it = config.find(CONFIG_HYSTERESIS);
+    if (it != config.end() && std::holds_alternative<double>(it->second)) {
+        setHysteresis(std::get<double>(it->second));
+    }
+}
+
 static OutputRegistrar _coolingRegistrar("cooling", [](const JsonObjectConst& params) -> Output* {
     uint8_t pin = params["pin"] | -1;  // Default -1 if missing
     if (pin == -1) {  // Basic validation

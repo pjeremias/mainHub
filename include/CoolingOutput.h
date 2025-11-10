@@ -8,11 +8,19 @@ public:
     CoolingOutput(uint8_t pin);
     void begin() override;
     void actuate(const SensorData& data) override;
-    String getId() const override { return "cooling"; }  // Default ID; can be set via constructor later
+    void setConfig(const ConfigMap& config) override;
+
+    // Setters for control parameters
+    void setSetPoint(double value) {_setPoint = value;}
+    void setHysteresis(double value) {_hysteresis = value;}
 
 private:
     uint8_t _pin;
     bool _isActive = false;  // Track current state to avoid unnecessary writes
+
+protected:
+    double _setPoint = 25.0;    // Default set point (e.g., Celsius)
+    double _hysteresis = 1.0;   // Default hysteresis (e.g., degrees)
 };
 
 #endif  // COOLING_OUTPUT_H
