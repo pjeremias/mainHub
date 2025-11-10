@@ -9,7 +9,6 @@ public:
     DHTSensor(uint8_t pin, uint8_t type = DHT22);
     void begin() override;
     SensorData readData() override;
-    String getId() const override { return "dht22"; }  // Default ID; can be overridden or set via constructor later
 
 private:
     DHT _dht;
