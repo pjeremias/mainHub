@@ -3,24 +3,26 @@
 
 #include <Arduino.h>
 #include "Sensor.h"  // For SensorData typedef
+#include <unordered_map>
+#include <variant>
+
+using ConfigMap = std::unordered_map<std::string, std::variant<int, double, bool>>;
 
 class Output {
 public:
     virtual ~Output() {}  // Virtual destructor for proper cleanup in polymorphism
     virtual void begin() = 0;  // Initialize the output hardware
     virtual void actuate(const SensorData& data) = 0;  // Actuate based on sensor data
-    virtual String getId() const = 0;  // Unique identifier for the output (for logging, etc.)
-
-    // Concrete setters for common control parameters
-    void setSetPoint(double value) {_setPoint = value;}
-    void setHysteresis(double value) {_hysteresis = value;}
+    virtual void setConfig(const ConfigMap& config) = 0;
 
     void setOnStateChange(std::function<void(Output*, bool newState)> callback) {_onStateChange = callback;}
 
 protected:
-    double _setPoint = 25.0;    // Default set point (e.g., Celsius)
-    double _hysteresis = 1.0;   // Default hysteresis (e.g., degrees)
     std::function<void(Output*, bool newState)> _onStateChange = nullptr;
 };
+
+// Common config key constants for consistency
+constexpr const char* CONFIG_SET_POINT = "setPoint";
+constexpr const char* CONFIG_HYSTERESIS = "hysteresis";
 
 #endif  // OUTPUT_H
