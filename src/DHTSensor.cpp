@@ -1,29 +1,29 @@
 #include "DHTSensor.h"
 #include "SensorFactory.h"
 
-DHTSensor::DHTSensor(uint8_t pin, uint8_t type) : _dht(_pin, _type), _pin(pin), _type(type){}
+DHTSensor::DHTSensor(uint8_t pin, uint8_t type) : _dht(pin, type){}
 
 void DHTSensor::begin() {
   _dht.begin();
   Serial.println("DHT22 sensor initialized.");
 }
 
-SensorData DHTSensor::readData() {
-  SensorData data;
-  // float temperature = _dht.readTemperature();  // Celsius
-  // float humidity = _dht.readHumidity();
+bool DHTSensor::updateData() {
+  // float temp = _dht.readTemperature();  // Celsius
+  // float hum = _dht.readHumidity();
 
-  // if (isnan(temperature) || isnan(humidity)) {
+  // if (isnan(temp) || isnan(hum)) {
   //     Serial.println("Failed to read from DHT22 sensor!");
-  //     return data;  // Return empty on error
+  //     return false;  // Do not update _data on error
   // }
 
-  // data["temp"] = temperature;
-  // data["hum"] = humidity;
-  data["temp"] = 25.1;
-  data["hum"] = 80;
-  return data;
+  // _data[Sensor::TEMP_KEY] = temp;
+  // _data[Sensor::HUM_KEY] = hum;
+  _data[Sensor::TEMP_KEY] = 20.0;
+  _data[Sensor::HUM_KEY] = 80.0;
+  return true;
 }
+
 static SensorRegistrar _dhtRegistrar("dht22", [](const JsonObjectConst& params) -> Sensor* {
   uint8_t pin = params["pin"] | -1;  // Default -1 if missing
   if (pin == -1) {  // Basic validation
