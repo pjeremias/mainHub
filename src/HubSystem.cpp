@@ -87,6 +87,20 @@ bool HubSystem::addOutput(const std::string& id, Output* output) {
     _outputs[_outputCount] = {id, output, ""};  // attachedSensor starts empty
     _outputCount++;
     output->begin();  // Initialize immediately
+
+    // Set state change callback to notify observer
+    output->setOnStateChange([this](Output* out, bool newState) {
+        // Find the output ID from the pointer
+        for (size_t i = 0; i < _outputCount; ++i) {
+            if (_outputs[i].output == out) {
+                if (_observer) {
+                    _observer->onOutputStateChanged(_outputs[i].id, newState);
+                }
+                break;
+            }
+        }
+    });
+
     Serial.printf("Added output '%s'\n", id.c_str());
     return true;
 }
@@ -144,6 +158,31 @@ bool HubSystem::unlinkOutput(const std::string& outputId) {
     return true;
 }
 
+bool HubSystem::setOutputConfig(const std::string& outputId, const ConfigMap& config) {
+    size_t outputIndex = findOutputIndex(outputId);
+    if (outputIndex >= MAX_OUTPUTS) {
+        Serial.printf("Output ID '%s' not found\n", outputId.c_str());
+        return false;
+    }
+
+    _outputs[outputIndex].output->setConfig(config);
+    Serial.printf("Set config for output '%s'\n", outputId.c_str());
+
+    // Notify observer
+    if (_observer) {
+        _observer->onOutputConfigChanged(outputId, config);
+    }
+    return true;
+}
+
+void HubSystem::setObserver(HubObserver* observer) {
+    _observer = observer;
+}
+
+void HubSystem::removeObserver() {
+    _observer = nullptr;
+}
+
 void HubSystem::loop() {
     if (millis() - _lastUpdate < UPDATE_INTERVAL) return;  // Not time yet
 
@@ -158,6 +197,11 @@ void HubSystem::loop() {
             Serial.printf("%s=%.2f ", pair.first.c_str(), pair.second);
         }
         Serial.println();
+
+        // Notify observer of data update
+        if (_observer) {
+            _observer->onSensorDataUpdated(_sensors[i].id, data);
+        }
     }
 
     // Iterate through outputs and actuate if attached to a sensor

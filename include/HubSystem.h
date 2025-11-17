@@ -6,6 +6,7 @@
 #include <string>
 #include "Sensor.h"
 #include "Output.h"
+#include "HubObserver.h"
 
 class HubSystem {
 public:
@@ -21,6 +22,13 @@ public:
     // Linkage management
     bool linkOutputToSensor(const std::string& outputId, const std::string& sensorId);
     bool unlinkOutput(const std::string& outputId);
+
+    // Configuration
+    bool setOutputConfig(const std::string& outputId, const ConfigMap& config);
+
+    // Observer management
+    void setObserver(HubObserver* observer);
+    void removeObserver();
 
     // Main loop for updating sensors and actuating outputs
     void loop();
@@ -51,6 +59,9 @@ private:
 
     std::array<OutputEntry, MAX_OUTPUTS> _outputs;
     size_t _outputCount = 0;
+
+    // Single observer
+    HubObserver* _observer = nullptr;
 
     // Timer for periodic updates
     unsigned long _lastUpdate = 0;
